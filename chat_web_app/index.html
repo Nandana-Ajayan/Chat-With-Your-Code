@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat with Your Code</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- 🌟 Welcome Screen -->
+  <div class="container welcome-container" id="welcome-screen">
+    <div class="welcome-box">
+      <img src="chatbot-icon.jpg" alt="Chatbot Icon" class="chatbot-icon">
+      <h1>Welcome to <span class="highlight">Chat with Your Code</span></h1>
+      <label for="user-input">What is your name?</label>
+      <input type="text" id="user-input" placeholder="Enter your name...">
+      <button onclick="continueChat()">Continue</button>
+    </div>
+  </div>
+
+  <!-- 💬 Chat Screen -->
+  <div class="container hidden" id="chat-screen">
+    <h2>Hello, <span id="user-name"></span> 👋</h2>
+
+    <div id="chat-window" class="chat-window"></div>
+
+    <!-- 📎 Upload File Button -->
+    <div class="upload-button">
+      <label for="file-image-upload" class="upload-icon-btn">📁 Upload File</label>
+      <input type="file" id="file-image-upload" accept=".c,.cpp,.txt,image/*">
+    </div>
+
+    <input type="text" id="chat-input" placeholder="Ask your code...">
+    <div class="btn-row">
+      <button onclick="sendMessage()">Send</button>
+      <button onclick="startVoice()">🎤 Speak</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
