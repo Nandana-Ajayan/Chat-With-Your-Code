@@ -14,7 +14,7 @@ def add_to_chroma(chunks, embeddings):
             embeddings=[embeddings[i]]
         )
 
-def query_chroma(query_embedding, top_k=3):
+def query_chroma(query_embedding, top_k=10):
     results = collection.query(
         query_embeddings=[query_embedding],
         n_results=top_k
