@@ -1,18 +1,10 @@
-# backend/chunker.py
 import os
 import clang.cindex
 from clang.cindex import CursorKind
 
-# On Windows, you might need to specify the path to the libclang.dll file.
-# If you installed with `pip install libclang`, it's often handled automatically.
-# If not, you may need to find the path to "libclang.dll" in your Python environment's
-# site-packages and uncomment the following line:
-# clang.cindex.Config.set_library_file('C:/path/to/your/python/Lib/site-packages/clang/libclang.dll')
-
 def load_c_code_files(directory):
-    """
-    Loads all C/C++ and header files from a directory.
-    """
+   
+    #Loads all C/C++ and header files from a directory.
     code_data = []
     for root, _, files in os.walk(directory):
         for file in files:
@@ -30,9 +22,8 @@ def load_c_code_files(directory):
     return code_data
 
 def chunk_code(code_data):
-    """
-    Chunks the C/C++ code by function definitions.
-    """
+
+    #Chunks the C/C++ code by function definitions.
     chunks = []
     for item in code_data:
         try:

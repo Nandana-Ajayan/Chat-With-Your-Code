@@ -1,15 +1,18 @@
 import chromadb
 
-client = chromadb.PersistentClient(path="./chroma")  # 🔥 this is all you need
+client = chromadb.PersistentClient(path="./chroma")  
 
+# Create or retrieve a collection(like a table in a DB)
 collection = client.get_or_create_collection("code_chunks")
 
 def add_to_chroma(chunks, embeddings):
-    """
-    Adds chunks and their embeddings to ChromaDB in a single batch for efficiency.
-    """
+
+    #Adds chunks and their embeddings to ChromaDB in a single batch for efficiency.
+    
     # Generate IDs for each chunk for batch insertion
     ids = [f"chunk_{i}" for i in range(len(chunks))]
+
+    # Add all data to ChromaDB collection in a single call
     collection.add(
         documents=[chunk["content"] for chunk in chunks],
         metadatas=[{"file": chunk["file"]} for chunk in chunks],
@@ -18,9 +21,7 @@ def add_to_chroma(chunks, embeddings):
     )
 
 def query_chroma(query_embedding, top_k=10, similarity_threshold=1.0):
-    """
-    Queries ChromaDB and filters the results by a distance threshold.
-    """
+    # Retrieve top_k most similar chunks
     results = collection.query(
         query_embeddings=[query_embedding],
         n_results=top_k

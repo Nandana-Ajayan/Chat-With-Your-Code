@@ -20,7 +20,7 @@ app = FastAPI()
 # A threshold of 1.0 is a good starting point, capturing reasonably similar documents.
 SIMILARITY_THRESHOLD = 1.2
 
-# --- CORS Middleware ---
+# --- Enable CORS to allow frontend to communicate with backend
 origins = ["*"]
 
 app.add_middleware(
@@ -32,21 +32,28 @@ app.add_middleware(
 )
 
 class QueryRequest(BaseModel):
-    question: str
+    question: str   # Accepts a string question from the frontend
 
 @app.on_event("startup")
 def index_code():
     print("🔄 Indexing C/C++ codebase...")
     start_time = time.time()
+
+    # Load all C/C++ files from 'data/lprint' directory
     code_data = load_c_code_files("data/lprint")
+
+    # Chunk the code into function-level snippets
     chunks = chunk_code(code_data)
     
     if not chunks:
         print("⚠️ No functions found to index. Ensure 'data/lprint' contains C/C++ files with function definitions.")
         return
-
+    
+    # Generate embeddings for each code chunk
     contents = [c["content"] for c in chunks]
     embeddings = embed_text(contents)
+
+    # Store chunks and embeddings into Chroma vector DB
     add_to_chroma(chunks, embeddings)
     end_time = time.time()
     print(f"✅ Codebase indexed with {len(chunks)} chunks in {end_time - start_time:.2f} seconds.")
@@ -57,18 +64,19 @@ def ask_code(query: QueryRequest):
     print("\n--- New Query Received ---")
     question = query.question
 
-    # 1. Embed the question
+    #  Convert the user's question into an embedding
     embedding_start_time = time.time()
     question_embedding = embed_text([question])[0]
     embedding_end_time = time.time()
     print(f"⏱️ Question embedding took: {embedding_end_time - embedding_start_time:.2f}s")
 
-    # 2. Retrieve relevant chunks with similarity threshold
+    # Retrieve relevant chunks with similarity threshold
     retrieval_start_time = time.time()
     results = query_chroma(question_embedding, top_k=10, similarity_threshold=SIMILARITY_THRESHOLD)
     retrieval_end_time = time.time()
     print(f"⏱️ ChromaDB query took: {retrieval_end_time - retrieval_start_time:.2f}s")
 
+    #Extract the retrieved documents/snippets
     retrieved_docs = results["documents"][0]
     if not retrieved_docs:
         print(f"🤷 No relevant code snippets found below similarity threshold of {SIMILARITY_THRESHOLD}.")
@@ -80,7 +88,7 @@ def ask_code(query: QueryRequest):
     
     print(f"✅ Found {len(retrieved_docs)} relevant snippets below the threshold.")
 
-    # 3. Generate an answer using the LLM
+    #Generate an answer using the LLM
     context = "\n\n".join(retrieved_docs)
     llm_start_time = time.time()
     answer = generate_answer_ollama(context, question)
@@ -90,6 +98,7 @@ def ask_code(query: QueryRequest):
     total_end_time = time.time()
     print(f"⏱️ Total request time: {total_end_time - total_start_time:.2f}s")
 
+    #Return the final answer, the snippets used, and file info to frontend
     return {
         "answer": answer,
         "snippets": retrieved_docs,
