@@ -16,7 +16,8 @@
       <h1>Welcome to <span class="highlight">Chat with Your Code</span></h1>
       <label for="user-input">What is your name?</label>
       <input type="text" id="user-input" placeholder="Enter your name...">
-      <button onclick="continueChat()">Continue</button>
+      <!-- CHANGE: Removed onclick and added an ID -->
+      <button id="continue-btn">Continue</button>
     </div>
   </div>
 
@@ -26,7 +27,6 @@
 
     <div id="chat-window" class="chat-window"></div>
 
-    <!-- 📎 Upload File Button -->
     <div class="upload-button">
       <label for="file-image-upload" class="upload-icon-btn">📁 Upload File</label>
       <input type="file" id="file-image-upload" accept=".c,.cpp,.h,.txt">
@@ -35,8 +35,9 @@
 
     <input type="text" id="chat-input" placeholder="Ask about the uploaded code...">
     <div class="btn-row">
-      <button onclick="sendMessage()">Send</button>
-      <button onclick="startVoice()">🎤 Speak</button>
+      <!-- CHANGE: Removed onclick and added IDs -->
+      <button id="send-btn">Send</button>
+      <button id="speak-btn">🎤 Speak</button>
     </div>
   </div>
 

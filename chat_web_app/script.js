@@ -19,15 +19,7 @@ async function sendMessage() {
   const chatWindow = document.getElementById("chat-window");
   const question = input.value.trim();
 
-  if (question === "") {
-    alert("Please type a question.");
-    return;
-  }
-
-  if (!uploadedFile) {
-    alert("Please upload a code file first.");
-    return;
-  }
+  if (question === "") return;
 
   // Display user's message
   const userMsg = document.createElement("div");
@@ -45,19 +37,30 @@ async function sendMessage() {
   chatWindow.appendChild(botPlaceholder);
   chatWindow.scrollTop = chatWindow.scrollHeight;
 
-  // Prepare form data
-  const formData = new FormData();
-  formData.append("question", question);
-  formData.append("file", uploadedFile);
-
   try {
-    const response = await fetch("http://localhost:8000/ask", {
-      method: "POST",
-      body: formData, // No 'Content-Type' header needed; browser sets it for FormData
-    });
+    let response;
+    // If a file is uploaded, use the FormData endpoint
+    if (uploadedFile) {
+      const formData = new FormData();
+      formData.append("question", question);
+      formData.append("file", uploadedFile);
+      
+      response = await fetch("http://localhost:8000/ask", {
+        method: "POST",
+        body: formData,
+      });
+
+    } else {
+      // If no file is uploaded, use the new text-only endpoint
+      response = await fetch("http://localhost:8000/ask_text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: question }),
+      });
+    }
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
@@ -68,7 +71,7 @@ async function sendMessage() {
 
   } catch (error) {
     console.error("Error fetching answer:", error);
-    botPlaceholder.innerHTML = `<div class="chat-bubble">🤖 Sorry, something went wrong. Please check the console for details.</div>`;
+    botPlaceholder.innerHTML = `<div class="chat-bubble">🤖 Sorry, something went wrong. Please check the console.</div>`;
     chatWindow.scrollTop = chatWindow.scrollHeight;
   }
 }
@@ -101,19 +104,34 @@ function startVoice() {
   };
 }
 
-// Handle file upload
-document.getElementById("file-image-upload").addEventListener("change", function () {
-  const file = this.files[0];
-  if (file) {
-    uploadedFile = file;
-    document.getElementById("file-name").textContent = `Selected: ${file.name}`;
-  }
-});
 
-// Allow sending messages with Enter key
-document.getElementById("chat-input").addEventListener("keypress", function (event) {
-    if (event.key === "Enter") {
-        event.preventDefault();
-        sendMessage();
+// --- NEW AND IMPROVED EVENT HANDLING ---
+
+// Wait for the entire webpage to be loaded before running any script
+document.addEventListener('DOMContentLoaded', (event) => {
+  
+  // Attach functions to buttons
+  document.getElementById('continue-btn').addEventListener('click', continueChat);
+  document.getElementById('send-btn').addEventListener('click', sendMessage);
+  document.getElementById('speak-btn').addEventListener('click', startVoice);
+
+  // Handle file upload
+  document.getElementById('file-image-upload').addEventListener('change', function () {
+    const file = this.files[0];
+    if (file) {
+      uploadedFile = file;
+      document.getElementById('file-name').textContent = `Selected: ${file.name}`;
+      // Give a visual cue to the user
+      alert(`📁 File "${file.name}" is ready to be used with your next question.`);
     }
+  });
+
+  // Allow sending messages with the Enter key in the chat input
+  document.getElementById('chat-input').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
+          e.preventDefault(); // Stop the default Enter key action
+          sendMessage();
+      }
+  });
+
 });
