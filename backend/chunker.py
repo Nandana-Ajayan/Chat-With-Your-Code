@@ -1,29 +1,12 @@
+# backend/chunker.py
 import os
 import clang.cindex
 from clang.cindex import CursorKind
 
-def load_c_code_files(directory):
-   
-    #Loads all C/C++ and header files from a directory.
-    code_data = []
-    for root, _, files in os.walk(directory):
-        for file in files:
-            if file.endswith((".c", ".cpp", ".h")):
-                path = os.path.join(root, file)
-                try:
-                    with open(path, "r", encoding="utf-8", errors="ignore") as f:
-                        content = f.read()
-                        code_data.append({
-                            "file": path,
-                            "content": content
-                        })
-                except Exception as e:
-                    print(f"Error reading file {path}: {e}")
-    return code_data
-
 def chunk_code(code_data):
-
-    #Chunks the C/C++ code by function definitions.
+    """
+    Chunks the C/C++ code by function definitions.
+    """
     chunks = []
     for item in code_data:
         try:

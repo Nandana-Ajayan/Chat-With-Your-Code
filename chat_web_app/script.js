@@ -1,4 +1,5 @@
-// chat_web_app/script.js
+// Keep track of the uploaded file
+let uploadedFile = null;
 
 function continueChat() {
   const name = document.getElementById("user-input").value.trim();
@@ -18,42 +19,50 @@ async function sendMessage() {
   const chatWindow = document.getElementById("chat-window");
   const question = input.value.trim();
 
-  if (question === "") return;
+  if (question === "") {
+    alert("Please type a question.");
+    return;
+  }
 
-  // Display user's message immediately
+  if (!uploadedFile) {
+    alert("Please upload a code file first.");
+    return;
+  }
+
+  // Display user's message
   const userMsg = document.createElement("div");
   userMsg.classList.add("chat-message", "user");
   userMsg.innerHTML = `<div class="chat-bubble">${question}</div>`;
   chatWindow.appendChild(userMsg);
 
-  // Clear the input field
   input.value = "";
   chatWindow.scrollTop = chatWindow.scrollHeight;
 
-  // Create a placeholder for the bot's response
+  // Show thinking indicator
   const botPlaceholder = document.createElement("div");
   botPlaceholder.classList.add("chat-message", "bot");
   botPlaceholder.innerHTML = `<div class="chat-bubble">🤖 Thinking...</div>`;
   chatWindow.appendChild(botPlaceholder);
   chatWindow.scrollTop = chatWindow.scrollHeight;
 
+  // Prepare form data
+  const formData = new FormData();
+  formData.append("question", question);
+  formData.append("file", uploadedFile);
+
   try {
-    // Send the question to the backend
     const response = await fetch("http://localhost:8000/ask", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ question: question }),
+      body: formData, // No 'Content-Type' header needed; browser sets it for FormData
     });
 
     if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
 
-    // Update the bot's message with the actual answer
+    // Display bot's answer
     botPlaceholder.innerHTML = `<div class="chat-bubble">🤖 ${data.answer}</div>`;
     chatWindow.scrollTop = chatWindow.scrollHeight;
 
@@ -92,16 +101,16 @@ function startVoice() {
   };
 }
 
-// Upload event
+// Handle file upload
 document.getElementById("file-image-upload").addEventListener("change", function () {
   const file = this.files[0];
   if (file) {
-    alert(`📁 File "${file.name}" uploaded!`);
-    // TODO: Add preview or backend logic
+    uploadedFile = file;
+    document.getElementById("file-name").textContent = `Selected: ${file.name}`;
   }
 });
 
-// Allow sending messages with the Enter key
+// Allow sending messages with Enter key
 document.getElementById("chat-input").addEventListener("keypress", function (event) {
     if (event.key === "Enter") {
         event.preventDefault();

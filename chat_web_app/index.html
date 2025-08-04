@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Chat with Your Code</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
   <!-- 🌟 Welcome Screen -->
@@ -27,10 +29,11 @@
     <!-- 📎 Upload File Button -->
     <div class="upload-button">
       <label for="file-image-upload" class="upload-icon-btn">📁 Upload File</label>
-      <input type="file" id="file-image-upload" accept=".c,.cpp,.txt,image/*">
+      <input type="file" id="file-image-upload" accept=".c,.cpp,.h,.txt">
+      <span id="file-name" class="file-name-display"></span>
     </div>
 
-    <input type="text" id="chat-input" placeholder="Ask your code...">
+    <input type="text" id="chat-input" placeholder="Ask about the uploaded code...">
     <div class="btn-row">
       <button onclick="sendMessage()">Send</button>
       <button onclick="startVoice()">🎤 Speak</button>
@@ -39,4 +42,5 @@
 
   <script src="script.js"></script>
 </body>
+
 </html>

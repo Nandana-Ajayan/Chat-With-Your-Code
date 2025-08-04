@@ -149,3 +149,13 @@ button:hover {
 .upload-button input[type="file"] {
   display: none;
 }
+
+/* ... (all your existing styles) ... */
+
+.file-name-display {
+  margin-left: 10px;
+  font-style: italic;
+  color: #94a3b8;
+}
+
+/* ... (rest of your existing styles) ... */

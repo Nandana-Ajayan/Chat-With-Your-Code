@@ -1,18 +1,19 @@
+# backend/retriever.py
 import chromadb
 
-client = chromadb.PersistentClient(path="./chroma")  
+# Use a transient, in-memory client. This will not save data to disk.
+client = chromadb.Client()
 
-# Create or retrieve a collection(like a table in a DB)
-collection = client.get_or_create_collection("code_chunks")
+def create_temp_collection(name):
+    """Creates a new temporary collection."""
+    return client.get_or_create_collection(name)
 
-def add_to_chroma(chunks, embeddings):
+def add_to_collection(collection, chunks, embeddings):
+    """Adds chunks and their embeddings to a specified collection."""
+    if not chunks:
+        return
 
-    #Adds chunks and their embeddings to ChromaDB in a single batch for efficiency.
-    
-    # Generate IDs for each chunk for batch insertion
     ids = [f"chunk_{i}" for i in range(len(chunks))]
-
-    # Add all data to ChromaDB collection in a single call
     collection.add(
         documents=[chunk["content"] for chunk in chunks],
         metadatas=[{"file": chunk["file"]} for chunk in chunks],
@@ -20,14 +21,13 @@ def add_to_chroma(chunks, embeddings):
         embeddings=embeddings
     )
 
-def query_chroma(query_embedding, top_k=10, similarity_threshold=1.0):
-    # Retrieve top_k most similar chunks
+def query_collection(collection, query_embedding, top_k=10, similarity_threshold=1.0):
+    """Queries a specified collection."""
     results = collection.query(
         query_embeddings=[query_embedding],
         n_results=top_k
     )
 
-    # Return an empty structure if no initial results are found
     if not results or not results["ids"][0]:
         return {"documents": [[]], "metadatas": [[]], "distances": [[]]}
 
@@ -35,19 +35,16 @@ def query_chroma(query_embedding, top_k=10, similarity_threshold=1.0):
     filtered_metadatas = []
     filtered_distances = []
 
-    # Results from Chroma are lists of lists; we work with the first list for our single query
     query_distances = results["distances"][0]
     query_documents = results["documents"][0]
     query_metadatas = results["metadatas"][0]
 
     for i, distance in enumerate(query_distances):
-        # L2 distance: lower is more similar. We only keep results below the threshold.
         if distance <= similarity_threshold:
             filtered_documents.append(query_documents[i])
             filtered_metadatas.append(query_metadatas[i])
             filtered_distances.append(distance)
         else:
-            # Since results are ordered by distance, we can stop once the threshold is exceeded.
             break
 
     return {
