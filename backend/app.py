@@ -1,31 +1,37 @@
-from fastapi import FastAPI, UploadFile, File, Form
-from pydantic import BaseModel
-from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, UploadFile, File, Form  #Imports the core components from the FastAPI framework to create the web application, handle file uploads, form data, and send responses.
+from pydantic import BaseModel #Imports BaseModel which is used to define the structure and data types for incoming request bodies.
+from fastapi.staticfiles import StaticFiles #Used to serve static files like HTML, CSS, and JavaScript.
+from fastapi.middleware.cors import CORSMiddleware # CORSMiddleware: allow frontend-backend communication
+from fastapi.responses import FileResponse #Allows you to send a file as a response.
 import os
 import time
 import uuid
+#standard Python libraries for interacting with the operating system, measuring time, and generating unique IDs
 
+# Import the functions you have defined in other files of project
 from .chunker import chunk_code
 from .embedder import embed_text
 from .retriever import create_temp_collection, add_to_collection, query_collection
 from .llm import generate_answer_ollama, extract_code_and_question
 
-app = FastAPI()
+app = FastAPI() # Creates an instance of the FastAPI application, which is the central point of your API.
 
 # --- Configuration ---
+# This is a configuration constant. This threshold is used to filter out retrieved code chunks that are not considered relevant enough to the question.
 SIMILARITY_THRESHOLD = 1.2
 
 # --- CORS Middleware ---
+# Enables CORS: allows requests from any origin, with any method and header
+# Useful for connecting frontend and backend hosted on different domains
+
 origins = ["*"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=origins, #permissive setting that allows any web page to send requests to your API.
+    allow_methods=["*"], #Accepts all HTTP methods
+    allow_headers=["*"], #Accepts all headers in requests
 )
-
+# This code creates a rule that says: "For the /ask_text endpoint, I expect to receive a JSON object that has a key named prompt, and the value of that key must be a string.
 class TextAskRequest(BaseModel):
     prompt: str
 
