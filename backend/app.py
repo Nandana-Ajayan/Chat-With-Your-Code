@@ -37,33 +37,37 @@ class TextAskRequest(BaseModel):
 #This endpoint is designed to handle a file upload along with a question. Primary RAG pipeline
 @app.post("/ask")
 async def ask_code(question: str = Form(...), file: UploadFile = File(...)):
-    total_start_time = time.time()
+    total_start_time = time.time() #start timing total request
     print("\n\n" + "="*80)
     print("--- New File Query Received ---")
     print(f"🤖 Processing uploaded file: {file.filename}")
 
-    try:
+    try: #Read and decode uploaded file content
         file_content = (await file.read()).decode("utf-8")
-    except Exception as e:
+    except Exception as e: #Return error if file cannot be read or decoded
         return {"answer": f"Error processing file: {e}", "snippets": [], "files": []}
-
+    #Wrap file content in a list of dicts for chunking
     code_data = [{"file": file.filename, "content": file_content}]
+    # Split file content into smaller code chunks (e.g., functions)
     chunks = chunk_code(code_data)
     if not chunks:
+        # If no functions/chunks found, return message
         return {"answer": "I could not find any functions in the uploaded file.", "snippets": [], "files": []}
-
+    # Create a temporary collection in ChromaDB for this request
     collection_name = f"temp_collection_{uuid.uuid4().hex}"
     collection = create_temp_collection(collection_name)
+    # Extract code contents from chunks and generate embeddings
     contents = [c["content"] for c in chunks]
     embeddings = embed_text(contents)
+    # Add chunks and their embeddings to ChromaDB collection
     add_to_collection(collection, chunks, embeddings)
     print(f"✅ File processed with {len(chunks)} chunks.")
-
+    # Generate embedding for user's question
     embedding_start_time = time.time()
     question_embedding = embed_text([question])[0]
     embedding_end_time = time.time()
-    embedding_took = embedding_end_time - embedding_start_time
-
+    embedding_took = embedding_end_time - embedding_start_time # Time taken to embed question
+    # Query ChromaDB using the question embedding to find relevant code chunks
     retrieval_start_time = time.time()
     raw_results = query_collection(collection, question_embedding)
     retrieval_end_time = time.time()
@@ -96,7 +100,7 @@ async def ask_code(question: str = Form(...), file: UploadFile = File(...)):
 
     if not filtered_docs:
         return {"answer": "I found code, but none of it seemed relevant to your question based on the similarity threshold. Try rephrasing your question.", "snippets": [], "files": []}
-
+    # Call the LLM (Ollama) with context + question to generate an answer
     context = "\n\n".join(filtered_docs)
     llm_start_time = time.time()
     answer = generate_answer_ollama(context, question)
@@ -111,7 +115,7 @@ async def ask_code(question: str = Form(...), file: UploadFile = File(...)):
     print(f"⏱️ LLM Generation Time: {llm_took:.2f}s")
     print(f"⏱️ Total Request Time: {total_end_time - total_start_time:.2f}s")
     print("="*80 + "\n")
-
+    # Return generated answer, relevant code snippets, and associated metadata
     return {"answer": answer, "snippets": filtered_docs, "files": filtered_metadatas}
 
 #Handles the RAG pipeline for a raw text prompt containing both code and a question.
@@ -176,7 +180,7 @@ async def ask_text(request: TextAskRequest):
     
     print(f"\n✅ Found {len(filtered_docs)} relevant snippets below the threshold.")
 
-    # --- THIS IS THE NEW FALLBACK LOGIC ---
+    #FALLBACK LOGIC
     context_docs_for_llm = []
     if filtered_docs:
         print("✅ Using similarity search results for context.")
@@ -189,7 +193,7 @@ async def ask_text(request: TextAskRequest):
     else:
         # This case should not be reached if the check for chunks at the top works, but it's good practice.
         return {"answer": "I couldn't find any code to analyze, so I can't answer the question.", "snippets": [], "files": []}
-    # --- END OF NEW LOGIC ---
+    
 
     context = "\n\n".join(context_docs_for_llm)
     llm_start_time = time.time()
