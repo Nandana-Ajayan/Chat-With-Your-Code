@@ -34,7 +34,7 @@ app.add_middleware(
 # This code creates a rule that says: "For the /ask_text endpoint, I expect to receive a JSON object that has a key named prompt, and the value of that key must be a string.
 class TextAskRequest(BaseModel):
     prompt: str
-
+#This endpoint is designed to handle a file upload along with a question. Primary RAG pipeline
 @app.post("/ask")
 async def ask_code(question: str = Form(...), file: UploadFile = File(...)):
     total_start_time = time.time()
@@ -65,7 +65,7 @@ async def ask_code(question: str = Form(...), file: UploadFile = File(...)):
     embedding_took = embedding_end_time - embedding_start_time
 
     retrieval_start_time = time.time()
-    raw_results = query_collection(collection, question_embedding, top_k=10)
+    raw_results = query_collection(collection, question_embedding)
     retrieval_end_time = time.time()
     retrieval_took = retrieval_end_time - retrieval_start_time
     
@@ -114,7 +114,7 @@ async def ask_code(question: str = Form(...), file: UploadFile = File(...)):
 
     return {"answer": answer, "snippets": filtered_docs, "files": filtered_metadatas}
 
-
+#Handles the RAG pipeline for a raw text prompt containing both code and a question.
 @app.post("/ask_text")
 async def ask_text(request: TextAskRequest):
     total_start_time = time.time()
@@ -147,7 +147,7 @@ async def ask_text(request: TextAskRequest):
     embedding_took = embedding_end_time - embedding_start_time
 
     retrieval_start_time = time.time()
-    raw_results = query_collection(collection, question_embedding, top_k=10)
+    raw_results = query_collection(collection, question_embedding)
     retrieval_end_time = time.time()
     retrieval_took = retrieval_end_time - retrieval_start_time
     
