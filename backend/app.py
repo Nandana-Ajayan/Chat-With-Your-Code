@@ -18,7 +18,7 @@ app = FastAPI() # Creates an instance of the FastAPI application, which is the c
 
 # --- Configuration ---
 # This is a configuration constant. This threshold is used to filter out retrieved code chunks that are not considered relevant enough to the question.
-SIMILARITY_THRESHOLD = 1.2
+SIMILARITY_THRESHOLD = 2
 
 # --- CORS Middleware ---
 # Enables CORS: allows requests from any origin, with any method and header

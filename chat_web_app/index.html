@@ -43,5 +43,307 @@
 
   <script src="script.js"></script>
 </body>
+<style>
+  * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: #0f172a;
+  color: white;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.container {
+  width: 100vw;
+  height: 100vh;
+  padding: 30px;
+  background-color: #1e293b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hidden {
+  display: none;
+}
+
+.welcome-container {
+  justify-content: center;
+}
+
+.welcome-box {
+  text-align: center;
+  max-width: 400px;
+  width: 100%;
+}
+
+.chatbot-icon {
+  width: 80px;
+  margin-bottom: 20px;
+}
+
+.highlight {
+  color: #38bdf8;
+}
+
+input[type="text"] {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 8px;
+  border: none;
+  font-size: 1em;
+}
+
+button {
+  padding: 10px;
+  background-color: #38bdf8;
+  color: #0f172a;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 48%;
+}
+
+button:hover {
+  background-color: #0ea5e9;
+}
+
+.btn-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+  width: 100%;
+  max-width: 600px;
+}
+
+.chat-window {
+  flex-grow: 1;
+  width: 100%;
+  max-width: 800px;
+  overflow-y: auto;
+  background-color: #0f172a;
+  padding: 10px;
+  margin: 20px 0;
+  border-radius: 8px;
+  border: 1px solid #334155;
+}
+
+/* Chat bubbles */
+.chat-message {
+  display: flex;
+  margin-bottom: 10px;
+}
+
+.chat-message.user {
+  justify-content: flex-end;
+}
+
+.chat-message.bot {
+  justify-content: flex-start;
+}
+
+.chat-bubble {
+  padding: 10px 15px;
+  border-radius: 16px;
+  max-width: 80%;
+  font-size: 0.95em;
+  line-height: 1.4;
+}
+
+.chat-message.user .chat-bubble {
+  background-color: #38bdf8;
+  color: #0f172a;
+  border-bottom-right-radius: 4px;
+}
+
+.chat-message.bot .chat-bubble {
+  background-color: #1e293b;
+  color: #e2e8f0;
+  border-bottom-left-radius: 4px;
+  border: 1px solid #334155;
+}
+
+/* Upload button */
+.upload-button {
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.upload-icon-btn {
+  background-color: #334155;
+  color: #f1f5f9;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 1em;
+  cursor: pointer;
+  display: inline-block;
+}
+
+.upload-icon-btn:hover {
+  background-color: #475569;
+}
+
+.upload-button input[type="file"] {
+  display: none;
+}
+
+/* ... (all your existing styles) ... */
+
+.file-name-display {
+  margin-left: 10px;
+  font-style: italic;
+  color: #94a3b8;
+}
+
+/* ... (rest of your existing styles) ... */
+</style>
+<script>
+  // Keep track of the uploaded file
+let uploadedFile = null;
+
+function continueChat() {
+  const name = document.getElementById("user-input").value.trim();
+
+  if (name === "") {
+    alert("Please enter your name!");
+    return;
+  }
+
+  document.getElementById("welcome-screen").classList.add("hidden");
+  document.getElementById("chat-screen").classList.remove("hidden");
+  document.getElementById("user-name").textContent = name;
+}
+
+async function sendMessage() {
+  const input = document.getElementById("chat-input");
+  const chatWindow = document.getElementById("chat-window");
+  const question = input.value.trim();
+
+  if (question === "") return;
+
+  // Display user's message
+  const userMsg = document.createElement("div");
+  userMsg.classList.add("chat-message", "user");
+  userMsg.innerHTML = `<div class="chat-bubble">${question}</div>`;
+  chatWindow.appendChild(userMsg);
+
+  input.value = "";
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+
+  // Show thinking indicator
+  const botPlaceholder = document.createElement("div");
+  botPlaceholder.classList.add("chat-message", "bot");
+  botPlaceholder.innerHTML = `<div class="chat-bubble">🤖 Thinking...</div>`;
+  chatWindow.appendChild(botPlaceholder);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+
+  try {
+    let response;
+    // If a file is uploaded, use the FormData endpoint
+    if (uploadedFile) {
+      const formData = new FormData();
+      formData.append("question", question);
+      formData.append("file", uploadedFile);
+      
+      response = await fetch("http://localhost:8000/ask", {
+        method: "POST",
+        body: formData,
+      });
+
+    } else {
+      // If no file is uploaded, use the new text-only endpoint
+      response = await fetch("http://localhost:8000/ask_text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: question }),
+      });
+    }
+
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Display bot's answer
+    botPlaceholder.innerHTML = `<div class="chat-bubble">🤖 ${data.answer}</div>`;
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+
+  } catch (error) {
+    console.error("Error fetching answer:", error);
+    botPlaceholder.innerHTML = `<div class="chat-bubble">🤖 Sorry, something went wrong. Please check the console.</div>`;
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+  }
+}
+
+function startVoice() {
+  if (!('webkitSpeechRecognition' in window)) {
+    alert("Your browser doesn't support voice input.");
+    return;
+  }
+
+  const recognition = new webkitSpeechRecognition();
+  recognition.lang = "en-US";
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  recognition.start();
+
+  recognition.onresult = function (event) {
+    const transcript = event.results[0][0].transcript;
+    document.getElementById("chat-input").value = transcript;
+    sendMessage();
+  };
+
+  recognition.onerror = function (event) {
+    if (event.error === "no-speech") {
+      alert("🎤 No speech detected! Please speak clearly into the mic.");
+    } else {
+      alert("Voice error: " + event.error);
+    }
+  };
+}
+
+
+// --- NEW AND IMPROVED EVENT HANDLING ---
+
+// Wait for the entire webpage to be loaded before running any script
+document.addEventListener('DOMContentLoaded', (event) => {
+  
+  // Attach functions to buttons
+  document.getElementById('continue-btn').addEventListener('click', continueChat);
+  document.getElementById('send-btn').addEventListener('click', sendMessage);
+  document.getElementById('speak-btn').addEventListener('click', startVoice);
+
+  // Handle file upload
+  document.getElementById('file-image-upload').addEventListener('change', function () {
+    const file = this.files[0];
+    if (file) {
+      uploadedFile = file;
+      document.getElementById('file-name').textContent = `Selected: ${file.name}`;
+      // Give a visual cue to the user
+      alert(`📁 File "${file.name}" is ready to be used with your next question.`);
+    }
+  });
+
+  // Allow sending messages with the Enter key in the chat input
+  document.getElementById('chat-input').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
+          e.preventDefault(); // Stop the default Enter key action
+          sendMessage();
+      }
+  });
+
+});
+</script>
 
 </html>
